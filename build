@@ -1,0 +1,2 @@
+#!/bin/sh
+ocamlopt token.ml lexer.ml && exec a.out
