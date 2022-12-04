@@ -16,7 +16,34 @@ let lookup_ident (ident : string)  =
 *)
 
 module Token : sig
-	type t
+	type t = 
+		| ILLEGAL 
+		| EOF 
+		| IDENT of string (* identifiers + literals *)
+		| INT of string
+		| ASSIGN (* operators *)
+		| PLUS
+		| MINUS
+		| BANG
+		| ASTERISK
+		| SLASH
+		| LT
+		| GT
+		| NOT_EQ
+		| EQ
+		| COMMA (* delimiters *)
+		| SEMICOLON
+		| LPAREN
+		| RPAREN
+		| LBRACE
+		| RBRACE
+		| FUNCTION (* keywords *)
+		| LET
+		| TRUE
+		| FALSE
+		| IF
+		| ELSE
+		| RETURN
 	val keywords : (string * t) list
 	val lookup_ident : string -> t option
 end = struct
