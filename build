@@ -1,2 +1,0 @@
-#!/bin/sh
-ocamlopt token.ml lexer.ml lexer_tests.ml && exec "$PWD/a.out"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# bar : build and run
+ocamlopt token.ml lexer.ml lexer_tests.ml && exec "./a.out"
