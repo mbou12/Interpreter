@@ -45,13 +45,14 @@ module Token : sig
 		| ELSE
 		| RETURN
 	val keywords : (string * t) list
-	val lookup_ident : string -> t option
+	val lookup_ident : string -> t
+    val token_to_string : t -> string
 end = struct
 	type t = 
 		| ILLEGAL 
 		| EOF 
-		| IDENT of string (* identifiers + literals *)
-		| INT of string
+		| IDENT of string (* identifiers + literals *) 
+		| INT of string (* NOT SURE WHY HOLDS STRING ? *)
 		| ASSIGN (* operators *)
 		| PLUS
 		| MINUS
@@ -86,14 +87,45 @@ end = struct
 		("return", RETURN);
 	]
 
-	let lookup_ident (ident : string) : t option = 
+	let lookup_ident (ident : string) : t = 
 		let rec aux kws = begin match kws with
-			| [] -> None
+			| [] -> IDENT ident
 			| (k::ks) -> begin match k with
-				| (key, tp) -> if ident = key then Some tp else aux ks
+				| (key, tp) -> if ident = key then tp else aux ks
 				end
 			end
 		in
 		aux keywords
+
+    let token_to_string (token : t) : string = 
+        begin match token with
+            | ILLEGAL -> "ILLEGAL"
+            | EOF -> "EOF"
+            | IDENT id -> id
+            | INT i -> i
+            | ASSIGN -> "ASSIGN"
+            | PLUS -> "PLUS"
+            | MINUS -> "MINUS"
+            | BANG -> "BANG"
+            | ASTERISK -> "ASTERISK"
+            | SLASH -> "SLASH"
+            | LT -> "LT"
+            | GT -> "GT"
+            | NOT_EQ -> "NOT_EQ"
+            | EQ -> "EQ"
+            | COMMA -> "COMMA"
+            | SEMICOLON -> "SEMICOLON"
+            | LPAREN -> "LPAREN"
+            | RPAREN -> "RPAREN"
+            | LBRACE -> "LBRACE"
+            | RBRACE -> "RBRACE"
+            | FUNCTION -> "FUNCTION" 
+            | LET -> "LET"
+            | TRUE -> "TRUE"
+            | FALSE -> "FALSE"
+            | IF -> "IF"
+            | ELSE -> "ELSE"
+            | RETURN -> "RETURN"
+        end
 end
 

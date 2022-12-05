@@ -1,3 +1,6 @@
 /*.cmi
 /*.cmx
 /*.o
+/a.out
+/log.txt
+/*.log

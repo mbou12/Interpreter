@@ -4,6 +4,7 @@ open Token
 module Lexer : sig
 	type t
 	val init : string -> t
+    val get_char : t -> char
 	val update_pos : t -> t
 	val read_char : t -> t
 	val skip_whitespaces : t -> t
@@ -29,34 +30,39 @@ end = struct
 		{
 			input = inp;
 			position = 0;
-			read_position = 0;
-			ch = '\x00';
+			read_position = 1;
+            ch = String.get inp 0;
 		}
+
+    let get_char (l : t ) : char = l.ch
 
 	let update_pos (l : t) : t =
 		{
 			input = l.input;
 			position = l.read_position;
 			read_position = (l.read_position + 1);
-			ch = (String.get l.input l.read_position);
+            ch = String.get l.input l.read_position;
 		}
 
 	let read_char (l : t) : t = 
 		if l.read_position >= (String.length l.input) then
-			{l with ch = '\x00'}	
+			{l with ch = '~'}	
 		else
 			update_pos l
 
 	(* Making a lot of copies of lexer object *)
 	let rec skip_whitespaces (l : t) : t = 
-		let next_char = read_char l in
-		match next_char.ch with
-		| ' ' -> skip_whitespaces next_char
-		| _ -> next_char
+        begin match l.ch with
+            | ' ' -> skip_whitespaces (read_char l)
+            | '\t' -> skip_whitespaces (read_char l) 
+            | '\n' -> skip_whitespaces (read_char l)
+            | '\r' -> skip_whitespaces (read_char l) 
+            | _ -> l
+        end
 
 	let peek_char (l : t) : char =
 		if l.read_position >= (String.length l.input) then
-			'\x00'
+			'~'
 		else
 			(String.get l.input l.read_position)
 	
@@ -92,53 +98,43 @@ end = struct
 	let next_token (l : t) : (t * Token.t) = 
 		(* skipping whitespaces *)
 		let skpd = skip_whitespaces l in
+        (* reading the next character ahead of time -- this updates the pos *)
+        let skpd_next = read_char skpd in
 		begin match skpd.ch with 
-		| '=' -> begin match (peek_char l) with
-			| '=' -> ((update_pos l), EQ) (* double equals for equality *)
-			| _ -> (skpd, ASSIGN)
-			end
-		| '+' -> (skpd, PLUS)
-		| '-' -> (skpd, MINUS)
-		| '!' -> begin match (peek_char l) with
-			| '=' -> ((update_pos l), NOT_EQ)
-			| _ -> (skpd, BANG)
-			end
-		| '*' -> (skpd, ASTERISK)
-		| '/' -> (skpd, SLASH)
-		| '<' -> (skpd, LT)
-		| '>' -> (skpd, GT)
-		| ';' -> (skpd, SEMICOLON)
-		| '(' -> (skpd, LPAREN)
-		| ')' -> (skpd, RPAREN)
-		| '{' -> (skpd, LBRACE)
-		| '}' -> (skpd, RBRACE)
-		| '\x00' -> (skpd, EOF)
-		| c -> 
-			if (is_letter c) then 
-					(* let (_, ident = read_identfier l c *)
-					let ident = read_identifier l (Char.escaped c) in
-					(* Ask prof about simpler pattern matching *)
-					begin match ident with
-					| (l2, i) -> begin match (Token.lookup_ident i) with
-						| None -> (l2, ILLEGAL)
-						| Some t -> (l2, t)
-						end
-					end
-			else if (is_digit c) then
-					let num = read_number l (Char.escaped c) in
-					begin match num with
-					| (l2, n) -> (l2, (INT n))
-					end
-			else
-				(skpd, ILLEGAL)
+            | '=' -> 
+                begin match skpd_next.ch with
+                    | '=' -> (read_char skpd_next, EQ) (* double equals for equality *)
+                    | _ -> (skpd_next, ASSIGN)
+                end
+            | '+' -> (skpd_next, PLUS)
+            | '-' -> (skpd_next, MINUS)
+            | '!' -> 
+                begin match skpd_next.ch with
+                    | '=' -> (read_char skpd_next, NOT_EQ)
+                    | _ -> (skpd_next, BANG)
+                end
+            | '*' -> (skpd_next, ASTERISK)
+            | '/' -> (skpd_next, SLASH)
+            | '<' -> (skpd_next, LT)
+            | '>' -> (skpd_next, GT)
+            | ';' -> (skpd_next, SEMICOLON)
+            | ',' -> (skpd_next, COMMA)
+            | '(' -> (skpd_next, LPAREN)
+            | ')' -> (skpd_next, RPAREN)
+            | '{' -> (skpd_next, LBRACE)
+            | '}' -> (skpd_next, RBRACE)
+            | '~' -> (skpd_next, EOF)
+            | c -> 
+                if (is_letter c) then 
+                    let ident = read_identifier skpd (Char.escaped c) in
+                    let (l2, i) = ident in
+                    (read_char l2, Token.lookup_ident i)
+                else if (is_digit c) then
+                    let num = read_number skpd (Char.escaped c) in
+                    let (l2, n) = num in
+                    (read_char l2, INT n)
+                else
+                    (skpd_next, ILLEGAL)
 		end
 end
 
-(*
-type lexer = {
-	input : string;
-	position : int ref; (* curr position in input -- points to curr char *)
-	read_position : int ref; (* curr reading poisition in input -- after curr char *)
-	ch : char ref (* curr char under examination *)
-}
-*)
